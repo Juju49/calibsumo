@@ -5,13 +5,11 @@ from itertools import compress
 
 import numpy as np
 
-from pysocialforceSUMO.potentials import PedPedPotential, PedSpacePotential
+from pysocialforceSUMO.potentials import AgentAgentPotential, AgentSpacePotential
 from pysocialforceSUMO.fieldofview import FieldOfView
 from pysocialforceSUMO.utils import Config, stateutils, logger
 
-from pysocialforceSUMO.scene import TYP_UNK, TYP_PED, TYP_ES, TYP_BK
-
-typ_set = {TYP_UNK, TYP_PED, TYP_ES, TYP_BK}
+from pysocialforceSUMO.utils import typ_set
 
 
 def camel_to_snake(camel_case_string):
@@ -75,11 +73,11 @@ class GoalAttractiveForce(Force):
         return f0
 
 
-class PedRepulsiveForce(Force):
-    """Ped to agent repulsive force"""
+class AgentRepulsiveForce(Force):
+    """Agent to agent repulsive force"""
 
     def _get_force(self):
-        potential_func = PedPedPotential(
+        potential_func = AgentAgentPotential(
             self.peds.step_width, self.peds.vtyp(), v0=self.config("v0"), sigma=self.config("sigma"),
         )
         f_ab = -1.0 * potential_func.grad_r_ab(
@@ -98,8 +96,8 @@ class SpaceRepulsiveForce(Force):
         if self.scene.get_obstacles() is None:
             F_aB = np.zeros((self.peds.size(), 0, 2))
         else:
-            potential_func = PedSpacePotential(
-                self.scene.get_obstacles(), u0=self.config("u0"), r=self.config("r")
+            potential_func = AgentSpacePotential(
+                self.scene.get_obstacles(), self.peds.vtyp(), u0=self.config("u0"), r=self.config("r")
             )
             F_aB = -1.0 * potential_func.grad_r_aB(self.peds.state)
         return np.sum(F_aB, axis=1)

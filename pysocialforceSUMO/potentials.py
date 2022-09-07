@@ -2,11 +2,11 @@
 
 import numpy as np
 
-from pysocialforceSUMO.utils import stateutils
+from pysocialforceSUMO.utils import stateutils, typ_set
 
 
-class PedPedPotential(object):  # TODO : adapt to multiple coeffs
-    """Ped-ped interaction potential.
+class AgentAgentPotential(object):
+    """Agent-Agent interaction potential based on vehicle type.
 
     v0 is in m^2 / s^2.
     sigma is in m.
@@ -14,9 +14,19 @@ class PedPedPotential(object):  # TODO : adapt to multiple coeffs
 
     def __init__(self, delta_t, vtypes, v0=None, sigma=None):
         self.delta_t = delta_t
-        self.v0 = v0 or np.full((4,), 2.1)
-        self.sigma = sigma or np.full((4,), 0.3)
+        v0 = v0 or np.full((len(typ_set), len(typ_set)), 2.1)
+        sigma = sigma or np.full((len(typ_set), len(typ_set)), 0.3)
         self.vtypes = vtypes
+
+        # apply sigma and v0 stuff to a matrix for later computations
+        sigma_applied = np.zeros((len(vtypes), len(vtypes)))
+        v0_applied = np.zeros((len(vtypes), len(vtypes)))
+        for i, vehicle_a_type in enumerate(vtypes):
+            for j, vehicle_b_type in enumerate(vtypes): # TODO : order might need to be reversed
+                sigma_applied[i, j] = sigma[vehicle_a_type, vehicle_b_type]
+                v0_applied[i, j] = v0[vehicle_a_type, vehicle_b_type]
+        self.sigma = sigma_applied
+        self.v0 = v0_applied
 
     def b(self, r_ab, speeds, desired_directions):
         """Calculate b.
@@ -24,9 +34,7 @@ class PedPedPotential(object):  # TODO : adapt to multiple coeffs
         e: desired direction
         2b=sqrt((r_ab+(r_ab-v*delta_t*e_b))
         """
-        speeds_b = np.expand_dims(speeds, axis=0)
-        for i in range(4):
-            speeds_b[self.vtypes == i] *= self.delta_t[i]
+        speeds_b = np.expand_dims(speeds, axis=0) * self.delta_t
         speeds_b_abc = np.expand_dims(speeds_b, axis=2)  # abc = alpha, beta, coordinates
         e_b = np.expand_dims(desired_directions, axis=0)
 
@@ -73,8 +81,8 @@ class PedPedPotential(object):  # TODO : adapt to multiple coeffs
         return np.stack((dvdx, dvdy), axis=-1)
 
 
-class PedSpacePotential(object):  # TODO : adapt to multiple coeffs
-    """Pedestrian-obstacles interaction potential.
+class AgentSpacePotential(object):  # TODO : adapt to multiple coeffs
+    """Agent-obstacles interaction potential.
 
     obstacles is a list of numpy arrays containing points of boundaries.
 
@@ -82,10 +90,11 @@ class PedSpacePotential(object):  # TODO : adapt to multiple coeffs
     r is in m
     """
 
-    def __init__(self, obstacles, u0=None, r=None):
+    def __init__(self, obstacles, vtypes, u0=None, r=None):
         self.obstacles = obstacles or []
-        self.u0 = u0 or 10
-        self.r = r or 0.2
+        self.u0 = u0 or np.full((len(typ_set),), 10)
+        self.r = r or np.full((len(typ_set),), 0.2)
+        self.vtypes = vtypes
 
     def value_r_aB(self, r_aB):
         """Compute value parametrized with r_aB."""

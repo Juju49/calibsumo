@@ -44,8 +44,6 @@ class Config:
             return np.array((0., default, default, default))
         elif len(ret) == 1:
             return ret[0]
-        elif len(ret) < 4:
-            return np.array((0.0, *ret))
         else:
             return np.array(ret)
 
@@ -59,55 +57,65 @@ class DefaultConfig(Config):
     [scene]
     enable_group = [false]
     agent_radius = [3.5, 0.35, 1.5, 2.0]
-    step_width = [1.0, 10.0, 10.0]
-    max_speed_multiplier = [1.3, 1.5, 1.5]
+    step_width = [1.0]
+    max_speed_multiplier = [1.0, 1.3, 1.5, 1.5]
     tau = [0.5, 0.5, 0.5]
     resolution = [10]
 
     [goal_attractive_force]
-    factor = [1.0, 1.0, 1.0]
+    factor = [1.0, 1.0, 1.0, 1.0]
 
     [ped_repulsive_force]
-    factor = [1.5, 1.5, 1.5]
-    v0 = [2.1, 2.1, 2.1]
-    sigma = [0.3, 0.3, 0.3]
+    factor = [1.0, 1.5, 1.5, 1.5]
+    v0 = [
+        [1.0, 2.1, 2.1, 2.1],
+        [1.0, 2.1, 2.1, 2.1],
+        [1.0, 2.1, 2.1, 2.1],
+        [1.0, 2.1, 2.1, 2.1],
+    ]
+    sigma = [
+        [1.0, 0.3, 0.3, 0.3],
+        [1.0, 0.3, 0.3, 0.3],
+        [1.0, 0.3, 0.3, 0.3],
+        [1.0, 0.3, 0.3, 0.3],
+    ]
     # fov params
-    fov_phi = [100.0, 100.0, 100.0]
-    fov_factor = [0.5, 0.5, 0.5] # out of view factor
+    fov_phi = [1.0, 100.0, 100.0, 100.0]
+    fov_factor = [1.0, 0.5, 0.5, 0.5] # out of view factor
 
     [space_repulsive_force]
-    factor = [1.0, 1.0, 1.0]
-    u0 = [10.0, 10.0, 10.0]
-    r = [0.2, 0.2, 0.2]
+    factor = [1.0, 1.0, 1.0, 1.0]
+    u0 = [1.0, 10.0, 10.0, 10.0]
+    r = [1.0, 0.2, 0.2, 0.2]
 
     [group_coherence_force]
-    factor = [3.0, 3.0, 3.0]
+    factor = [1.0, 3.0, 3.0, 3.0]
 
     [group_repulsive_force]
-    factor = [1.0, 1.0, 1.0]
-    threshold = [0.55, 1.0, 1.0]
+    factor = [1.0, 1.0, 1.0, 1.0]
+    threshold = [1.0, 0.55, 1.0, 1.0]
 
     [group_gaze_force]
-    factor = [4.0, 4.0, 4.0]
+    factor = [1.0, 4.0, 4.0, 4.0]
     # fov params
-    fov_phi = [90, 80, 80]
+    fov_phi = [1.0, 90, 80, 80]
 
     [desired_force]
-    factor = [1.0, 1.0, 1.0]
-    relaxation_time = [0.5, 0.5, 0.5]
-    goal_threshold = [0.2, 1.0, 1.0]
+    factor = [1.0, 1.0, 1.0, 1.0]
+    relaxation_time = [1.0, 0.5, 0.5, 0.5]
+    goal_threshold = [1.0, 0.2, 1.0, 1.0]
     
     [social_force]
-    factor = [5.1, 5.1, 5.1]
-    lambda_importance = [2.0, 2.0, 2.0]
-    gamma = [0.35, 0.35, 0.35]
-    n = [2, 2, 2]
-    n_prime = [3, 3, 3]
+    factor = [1.0, 5.1, 5.1, 5.1]
+    lambda_importance = [1.0, 2.0, 2.0, 2.0]
+    gamma = [1.0, 0.35, 0.35, 0.35]
+    n = [1, 2, 2, 2]
+    n_prime = [1, 3, 3, 3]
 
     [obstacle_force]
-    factor = [10.0, 15.0, 15.0]
-    sigma = [0.2, 0.2, 0.2]
-    threshold = [3.0, 3.0, 3.0]
+    factor = [1.0, 10.0, 15.0, 15.0]
+    sigma = [1.0, 0.2, 0.2, 0.2]
+    threshold = [1.0, 3.0, 3.0, 3.0]
 
     [along_wall_force]
     """
