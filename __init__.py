@@ -19,7 +19,6 @@ if __name__ == "__main__":
 from . import simulation as sim
 from . import build
 
-
 """ Respecter l'ordre de définition du domaine :
              study_area[1] | study_area[2]
              --------------+--------------
@@ -47,10 +46,10 @@ VAR_DISCRETE = False
 default_vars_list = [
     # SUMO
     sim.Variable(
-        "--step-length", 
-        VAR_CONTINUOUS, 
-        (0.001, 10.0), 
-        location=LOC_SUMO, 
+        "--step-length",
+        VAR_CONTINUOUS,
+        (0.001, 10.0),
+        location=LOC_SUMO,
         default=1.0,
     ),
     sim.Variable(
@@ -160,27 +159,30 @@ default_vars_list = [
     ),
     # Bike and ES
     sim.Constant(
-        "carFollowModel", 
-        location=LOC_VTYP, 
-        default="IDM", 
+        "carFollowModel",
+        location=LOC_VTYP,
+        default="IDM",
         subset={TYP_ES, TYP_BK},
     ),
 ]
 
-
 default_src_folder = "Cycle-Lane-Pedestrians-Crossing"
-default_output_dir = r"D:\PatrasCalibsumo"
+default_start = "E:\\Garyfallia\\"
+default_output_dir = r"E:\PatrasCalibsumo"
 
-#display exceptions correctly:
+# display exceptions correctly:
 __th_exc_lock = Lock()
+
+
 def __threadingException(args):
     with __th_exc_lock:
         threading.__excepthook__(args)
+
+
 threading.excepthook = __threadingException
 
 
 def createDefaultExperience(folder, output_folder=default_output_dir, use_sql=False):
-    default_start = "D:\\Garyfallia\\"
     default_xlsx = r"\DataBaseEXCEL\output.xlsx"
     default_sqlite = r"\DataFromTIAS\data.sqlite"
 
@@ -204,16 +206,18 @@ def createDefaultExperience(folder, output_folder=default_output_dir, use_sql=Fa
 
     # create experiment instance
     exp = sim.Experience(
-        os.path.join(output_folder, folder),
-        study_area=default_study_area,
-        vTypes_to_calibrate={TYP_ES, TYP_BK, TYP_PED},
+        os.path.join(output_folder, folder),  # path where the network file and iterations will be stored
+        study_area=default_study_area,  # where to cut trajectories when using sql mostly
+        vTypes_to_calibrate={TYP_ES, TYP_BK, TYP_PED},  # used to restrict to certain vehicle types to run the
+        # calibration algorithm on
     )
     # load experiment data from file
     exp.chargement_donnees(data_path)
 
-    build.createNet(
-        os.path.join(exp.directory, f"network.net.xml"), 
-        bike_lane_width=bk_lane_size, 
+    build.createNet(  # creates + shaped networks with bike lane going upwards and an horizontal pedestrian path with
+        # a crosswalk in the center
+        os.path.join(exp.directory, f"network.net.xml"),  # place to put the network file
+        bike_lane_width=bk_lane_size,
         crossing_location=crossing_dist,
     )
 
@@ -223,7 +227,6 @@ def createDefaultExperience(folder, output_folder=default_output_dir, use_sql=Fa
         exp.application_filtre()
 
     return exp
-
 
 
 ##########
@@ -267,8 +270,8 @@ def calibrate(experiences, variable_list, directory, traci_step_function=lambda 
     erreur_globale_new = 1  # pour rentrer dans la boucle
 
     while (
-        (step < MAX_STEP) or 
-        (abs(erreur_globale - erreur_globale_new) / max(erreur_globale, erreur_globale_new) > tol)
+            (step < MAX_STEP) or
+            (abs(erreur_globale - erreur_globale_new) / max(erreur_globale, erreur_globale_new) > tol)
     ) and not stop_iterating:
 
         print("\n \n nouvelle itération : n°", step)
@@ -284,7 +287,7 @@ def calibrate(experiences, variable_list, directory, traci_step_function=lambda 
         # réalisation des Simulations
         folder = os.path.join(my_dir, f"step{step}")
         threadsToMonitor = []
-        i=0
+        i = 0
         for jeu in jeux:
             metasim = sim.Meta_Simulation(exp_set, jeu, folder, i)
             l_Meta_simulations.append(metasim)
@@ -303,7 +306,7 @@ def calibrate(experiences, variable_list, directory, traci_step_function=lambda 
         except KeyboardInterrupt:
             stop_iterating = True
             print("\n====!! STOP REQUEST REGISTERED !!====\n\n", end="")
-            
+
         finally:
             for t in threadsToMonitor:
                 t.join()
@@ -313,7 +316,7 @@ def calibrate(experiences, variable_list, directory, traci_step_function=lambda 
         l_Meta_simulations.sort(key=lambda x: x.err, reverse=False)
 
         # on jette les simulations les plus mauvaises
-        l_Meta_simulations = l_Meta_simulations[: max(int(len(l_Meta_simulations) * rho),1)]
+        l_Meta_simulations = l_Meta_simulations[: max(int(len(l_Meta_simulations) * rho), 1)]
         print("number of metasims kept:", len(l_Meta_simulations))
         # restimation des parametres #>> à faire
 
@@ -340,24 +343,24 @@ def calibrate(experiences, variable_list, directory, traci_step_function=lambda 
         l_memoire_err.append(erreur_globale_new)
         l_memoire_parametres.append(params_new)
 
-    
     results = {
-        "step" : step, 
-        "memparams" : l_memoire_parametres, 
-        "memerr" : l_memoire_err, 
-        "metasim" : l_Meta_simulations[0],
-        "folder" : my_dir,
+        "step": step,
+        "memparams": l_memoire_parametres,
+        "memerr": l_memoire_err,
+        "metasim": l_Meta_simulations[0],
+        "folder": my_dir,
     }
     saveData(results)
     return results
+
 
 def saveData(calibrated):
     directory = calibrated["folder"]
     import matplotlib.pylab as plt
     if not os.path.exists(directory):
         os.makedirs(directory)
-    
-    plt.title("Evolution of RMSE during calibration")    
+
+    plt.title("Evolution of RMSE during calibration")
     plt.xlabel("step")
     plt.ylabel("RMSE")
     plt.plot(np.arange(len(calibrated["memerr"])), calibrated["memerr"])
@@ -365,27 +368,25 @@ def saveData(calibrated):
     plt.close()
 
     calibrated["memparams"][-1].dumpAsCSVfile(os.path.join(directory, "calibratedParams.csv"),
-                                       calibrated["metasim"].parametres,
-                                       nbSteps=calibrated["step"],
-                                       RMSE=calibrated["memerr"][-1],
-                                       )
-
-
+                                              calibrated["metasim"].parametres,
+                                              nbSteps=calibrated["step"],
+                                              RMSE=calibrated["memerr"][-1],
+                                              )
 
 
 if __name__ == "__main__":
-    path = default_output_dir+r"\accelDecelEmgSpeedGap1"
+    path = default_output_dir + r"\accelDecelEmgSpeedGap1"
     exp_set = set()
 
     exp_set.add(createDefaultExperience(default_src_folder, path))
     exp_set.add(createDefaultExperience("Road-Pedestrians-Crossing-1", path))
-    
+
     myVars2 = [
         sim.Variable(
-            "--step-length", 
-            VAR_CONTINUOUS, 
-            (0.01, 2.0), 
-            location=LOC_SUMO, 
+            "--step-length",
+            VAR_CONTINUOUS,
+            (0.01, 2.0),
+            location=LOC_SUMO,
             default=1.0,
         ),
         sim.Variable(
@@ -399,16 +400,16 @@ if __name__ == "__main__":
 
     rivoliVars = [
         sim.Constant(
-            "--step-length", 
-            location=LOC_SUMO, 
+            "--step-length",
+            location=LOC_SUMO,
             default=0.05,
         ),
         sim.Constant(
-            "--lateral-resolution", 
-            location=LOC_SUMO, 
+            "--lateral-resolution",
+            location=LOC_SUMO,
             default=0.257,
         ),
-        
+
         # ES exclusive
         sim.Variable(
             "maxSpeed",
@@ -534,8 +535,7 @@ if __name__ == "__main__":
         ),
     ]
 
-
-    #calibrated = calibrate(exp_set, default_vars_list, path)
-    #calibrated = calibrate(exp_set, myVars2, path)
+    # calibrated = calibrate(exp_set, default_vars_list, path)
+    # calibrated = calibrate(exp_set, myVars2, path)
     calibrated = calibrate(exp_set, rivoliVars, path)
 
